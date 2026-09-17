@@ -19,3 +19,8 @@ config_path: [configs/training/default.yaml, configs/training/3dgs_res_704_1280_
 
 # Update path to where the static Lyra checkpoint is downloaded
 ckpt_path: checkpoints/Lyra/lyra_static.pt
+
+# Disable 3DGUT (Unscented Transform) — incompatible with render_mode="RGB+ED"
+# in this gsplat commit: rasterize_to_pixels_from_world_3dgs_fwd asserts channels==3
+# but RGB+ED concatenates depth first, giving 4 channels.
+use_3dgut: false

@@ -67,7 +67,7 @@ def load_model_from_checkpoint(
         # disable fsdp
         config.model.config.fsdp_shard_size = 1
     with misc.timer("instantiate model"):
-        model = instantiate(config.model).cuda()
+        model = instantiate(config.model)
         # Convert the model parameters to bf16
         model.on_train_start()
 
@@ -90,6 +90,14 @@ def load_model_from_checkpoint(
             planner=DefaultLoadPlanner(allow_partial_load=True),
         )
         _model_wrapper.load_state_dict(_state_dict)
+
+    if torch.cuda.device_count() > 1:
+        from accelerate import dispatch_model, infer_auto_device_map
+        _max_mem = {i: "44GiB" for i in range(torch.cuda.device_count())}
+        _device_map = infer_auto_device_map(model, max_memory=_max_mem)
+        model = dispatch_model(model, device_map=_device_map)
+    else:
+        model = model.cuda()
 
     torch.cuda.empty_cache()
 

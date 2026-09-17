@@ -119,6 +119,12 @@ def create_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Multiply multi trajectory setup with movement distance factor (larger means more movement but potentially more artifacts)",
     )
+    parser.add_argument(
+        "--traj_subset",
+        type=str,
+        default=None,
+        help="Comma-separated trajectory indices to generate (0-5: left,right,up,zoom_out,zoom_in,clockwise). Default: all 6.",
+    )
     return parser
 
 def parse_arguments() -> argparse.Namespace:
@@ -576,8 +582,11 @@ def demo_multi_trajectory(args):
         "zoom_in": {"traj_idx": 4, "movement_distance_range": [0.3, 0.4]},
         "clockwise": {"traj_idx": 5, "movement_distance_range": [0.4, 0.6]},
     }
+    subset = {int(x) for x in args.traj_subset.split(",")} if getattr(args, "traj_subset", None) else None
     # Generate for each trajectory independently
     for traj, traj_dict in trajectories.items():
+        if subset is not None and traj_dict["traj_idx"] not in subset:
+            continue
         args.video_save_folder = os.path.join(video_save_folder, str(traj_dict["traj_idx"]))
         args.trajectory = traj
         args.movement_distance = random.uniform(

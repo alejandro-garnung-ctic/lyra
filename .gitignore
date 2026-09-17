@@ -1,0 +1,10 @@
+
+# Local additions (agarnung)
+Lyra-1/checkpoints/
+Lyra-2/checkpoints/
+Lyra-1/outputs/
+Lyra-2/outputs/
+Lyra-1/apex/
+Lyra-1/assets/
+__pycache__/
+*.pyc

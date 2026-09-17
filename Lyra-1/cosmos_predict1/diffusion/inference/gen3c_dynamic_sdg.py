@@ -134,6 +134,12 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="If set, this generates flipped camera trajectory supervision videos for all multi camera trajectories (only required for training).",
     )
+    parser.add_argument(
+        "--traj_subset",
+        type=str,
+        default=None,
+        help="Comma-separated trajectory indices to generate (0-5: left,right,up,zoom_out,zoom_in,clockwise). Default: all 6.",
+    )
     return parser.parse_args()
 
 def validate_args(args):
@@ -496,7 +502,7 @@ def demo(args):
 def demo_multi_trajectory(args):
     video_save_folder = args.video_save_folder
     flip_supervision = args.flip_supervision
-    
+
     # Define trajectories
     args.camera_gen_kwargs = {'radius_x_factor': 0.15, 'radius_y_factor': 0.10, 'num_circles': 2}
     trajectories_list = []
@@ -509,6 +515,7 @@ def demo_multi_trajectory(args):
         "clockwise": {"traj_idx": 5, "movement_distance_range": [0.4, 0.6]},
     }
     trajectories_list.append(trajectories)
+    subset = {int(x) for x in args.traj_subset.split(",")} if getattr(args, "traj_subset", None) else None
 
     # Add flipped supervision for training
     if flip_supervision:
@@ -523,10 +530,12 @@ def demo_multi_trajectory(args):
             traj_dict_flipped['flip_supervision'] = True
             trajectories_flipped[traj_k] = traj_dict_flipped
         trajectories_list.append(trajectories_flipped)
-    
+
     # Generate for each trajectory independently
     for trajectories in trajectories_list:
         for traj, traj_dict in trajectories.items():
+            if subset is not None and traj_dict["traj_idx"] not in subset:
+                continue
             args.video_save_folder = os.path.join(video_save_folder, str(traj_dict["traj_idx"]))
             args.trajectory = traj
             args.movement_distance = random.uniform(

@@ -147,10 +147,14 @@ class BaseWorldGenerationPipeline(ABC):
 
     def _offload_network(self):
         if self.model.model:
-            del self.model.model
-            self.model.model = None
-            gc.collect()
-            torch.cuda.empty_cache()
+            if torch.cuda.device_count() > 1:
+                self.model.model.to("cuda:1")
+                torch.cuda.empty_cache()
+            else:
+                del self.model.model
+                self.model.model = None
+                gc.collect()
+                torch.cuda.empty_cache()
 
     def _offload_tokenizer(self):
         if self.model.tokenizer:

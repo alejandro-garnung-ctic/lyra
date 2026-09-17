@@ -28,3 +28,6 @@ target_index_manual: [0, 60, 120]
 
 # Update path to where the static Lyra checkpoint is downloaded
 ckpt_path: checkpoints/Lyra/lyra_dynamic.pt
+
+# Disable 3DGUT — incompatible with render_mode="RGB+ED" in this gsplat commit
+use_3dgut: false

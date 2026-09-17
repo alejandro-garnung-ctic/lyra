@@ -51,8 +51,16 @@ def load_model(ckpt_path, config, weight_dtype):
     transformer.load_state_dict(data["module"])
 
     # Cast model
-    transformer.to(device=device, dtype=weight_dtype)
-    vae.to(device=device, dtype=weight_dtype)
+    if torch.cuda.device_count() > 1:
+        from accelerate import dispatch_model, infer_auto_device_map
+        _max_mem = {i: "44GiB" for i in range(torch.cuda.device_count())}
+        transformer = transformer.to(dtype=weight_dtype)
+        transformer = dispatch_model(transformer, device_map=infer_auto_device_map(transformer, max_memory=_max_mem))
+        vae = vae.to(dtype=weight_dtype)
+        vae = dispatch_model(vae, device_map=infer_auto_device_map(vae, max_memory=_max_mem))
+    else:
+        transformer.to(device=device, dtype=weight_dtype)
+        vae.to(device=device, dtype=weight_dtype)
     transformer.eval()
     vae.eval()
     return transformer, vae, distributed_state
@@ -153,6 +161,11 @@ def main_single(
         config.save_gaussians = False
         config.save_gaussians_orig = False
     
+    # Allow inference configs to override rendering flags that live in main_config
+    for _key in ['use_3dgut']:
+        if _key in config:
+            main_config[_key] = config[_key]
+
     # Generate each sample independently
     main_config.batch_size = 1
     main_config.gs_view_chunk_size = 1

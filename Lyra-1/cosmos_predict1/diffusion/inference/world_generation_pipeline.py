@@ -180,7 +180,10 @@ class DiffusionText2WorldGenerationPipeline(BaseWorldGenerationPipeline):
         )
 
     def _load_network(self):
-        load_network_model(self.model, f"{self.checkpoint_dir}/{self.checkpoint_name}/model.pt")
+        if torch.cuda.device_count() > 1 and self.model.model is not None:
+            self.model.model.to("cuda:0")
+        else:
+            load_network_model(self.model, f"{self.checkpoint_dir}/{self.checkpoint_name}/model.pt")
 
     def _load_tokenizer(self):
         load_tokenizer_model(self.model, f"{self.checkpoint_dir}/Cosmos-Tokenize1-CV8x8x8-720p")
